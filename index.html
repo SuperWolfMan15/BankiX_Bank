@@ -2,154 +2,191 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BankiX</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
+    * {
+      box-sizing: border-box;
+    }
     html, body {
-      margin: 0;
-      padding: 0;
+      margin: 0; padding: 0;
+      height: 100vh;
+      background-color: #111;
+      color: #fff;
       font-family: sans-serif;
-      background-color: #121212;
-      color: #eee;
-      transition: background 0.3s, color 0.3s;
-      height: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
-
-    .light-theme {
-      background-color: #fdfdfd;
-      color: #222;
-    }
-
-    .container {
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
       padding: 20px;
-      margin-bottom: 80px;
+      overflow: hidden;
     }
-
-    .bottom-menu {
+    nav {
+      height: 60px;
+      background-color: #222;
+      border-top: 1px solid #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
-      height: 60px;
-      background: #333;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      border-top: 2px solid #444;
-      gap: 20px;
+      z-index: 100;
     }
-
-    .light-theme .bottom-menu {
-      background: #ccc;
-      border-color: #aaa;
-    }
-
-    .button {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 10px;
-      background: #6c63ff;
+    button {
+      background-color: #333;
       color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
       font-size: 16px;
       cursor: pointer;
-      transition: 0.2s;
+      transition: background-color 0.2s;
     }
-
-    .button:hover {
-      background: #574fcf;
+    button:hover {
+      background-color: #444;
     }
-
     input {
+      margin: 5px;
       padding: 10px;
-      width: 100%;
-      margin: 5px 0;
-      border-radius: 8px;
-      border: 1px solid #999;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      width: 200px;
+      max-width: 100%;
     }
-
-    .hidden {
+    .section {
       display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding-bottom: 60px;
+      height: 100%;
+    }
+    .section.active {
+      display: flex;
+    }
+    h1 {
+      margin-bottom: 20px;
     }
 
-    .dialog {
+    /* Модальное миндальное окно */
+    #modal {
       position: fixed;
       top: 30%;
       left: 50%;
       transform: translate(-50%, -30%);
       background: #222;
-      color: #fff;
-      border: 2px solid #aaa;
-      border-radius: 12px;
-      padding: 20px;
+      color: #eee;
+      padding: 20px 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.7);
+      font-size: 18px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
       z-index: 1000;
       max-width: 90%;
-      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      text-align: center;
     }
-
-    .light-theme .dialog {
-      background: #fff;
-      color: #000;
-      border-color: #555;
+    #modal.show {
+      opacity: 1;
+      pointer-events: auto;
     }
   </style>
 </head>
 <body>
-  <div class="container" id="main">
-    <h2 id="screen-title">Заработать</h2>
-    <div id="earn">
-      <button class="button" onclick="earnCoins()">Получить 200 монет</button>
+  <main>
+    <div id="earn" class="section active">
+      <h1>Заработать</h1>
+      <p>Нажми, чтобы получить 200 монет (раз в 2 часа)</p>
+      <button onclick="claimCoins()">💸 Получить</button>
     </div>
-    <div id="send" class="hidden">
+
+    <div id="send" class="section">
+      <h1>Отправить монеты</h1>
       <input type="text" id="targetId" placeholder="ID получателя" />
-      <input type="number" id="amount" placeholder="Сколько монет" />
-      <button class="button" onclick="sendCoins()">Отправить</button>
+      <input type="number" id="amount" placeholder="Сумма" />
+      <button onclick="sendCoins()">📤 Отправить</button>
     </div>
-    <div id="menu" class="hidden">
-      <p><b>ID:</b> <span id="userIdDisplay"></span></p>
-      <p><b>Монеты:</b> <span id="coinsDisplay">0</span></p>
-      <button class="button" onclick="toggleTheme()">Сменить тему</button>
+
+    <div id="menu" class="section">
+      <h1>Профиль</h1>
+      <p>ID: <span id="userIdDisplay"></span></p>
+      <p>Монеты: <span id="coinDisplay">0</span></p>
+      <button onclick="toggleTheme()">🌓 Сменить тему</button>
     </div>
-  </div>
+  </main>
 
-  <div class="bottom-menu">
-    <button onclick="switchTab('earn')" class="button">💰</button>
-    <button onclick="switchTab('send')" class="button">📤</button>
-    <button onclick="switchTab('menu')" class="button">⚙️</button>
-  </div>
+  <nav>
+    <button onclick="showTab('earn')">💰 Заработать</button>
+    <button onclick="showTab('send')">📤 Отправить</button>
+    <button onclick="showTab('menu')">📁 Меню</button>
+  </nav>
 
-  <div id="dialog" class="dialog hidden"></div>
+  <div id="modal"></div>
 
   <script>
-    const dialog = document.getElementById("dialog");
-    const userId = localStorage.getItem("bankix_user_id") || generateId();
-    let coins = parseInt(localStorage.getItem("bankix_coins") || "0");
-    let lastClaim = parseInt(localStorage.getItem("bankix_last_claim") || "0");
-
-    function generateId() {
-      const id = "ID" + Math.floor(Math.random() * 1000000);
-      localStorage.setItem("bankix_user_id", id);
-      return id;
+    // Создаём или получаем ID
+    let userId = localStorage.getItem("bankix_user_id");
+    if (!userId) {
+      userId = "ID" + Math.floor(Math.random() * 1000000);
+      localStorage.setItem("bankix_user_id", userId);
     }
+    document.getElementById("userIdDisplay").textContent = userId;
 
-    function showDialog(msg) {
-      dialog.innerText = msg;
-      dialog.classList.remove("hidden");
-      setTimeout(() => {
-        dialog.classList.add("hidden");
+    // Баланс и время последнего получения
+    let coins = parseInt(localStorage.getItem("bankix_coins")) || 0;
+    let lastClaim = parseInt(localStorage.getItem("bankix_last_claim")) || 0;
+
+    // Модальное окно миндальное
+    const modal = document.getElementById('modal');
+    let modalTimeout;
+
+    function showModal(msg) {
+      clearTimeout(modalTimeout);
+      modal.textContent = msg;
+      modal.classList.add('show');
+      modalTimeout = setTimeout(() => {
+        modal.classList.remove('show');
       }, 3000);
     }
 
-    function earnCoins() {
+    // Обновляем баланс с учётом входящих монет
+    function updateDisplay() {
+      const inboxKey = "bankix_inbox_" + userId;
+      const inboxCoins = parseInt(localStorage.getItem(inboxKey)) || 0;
+      if (inboxCoins > 0) {
+        coins += inboxCoins;
+        localStorage.setItem("bankix_coins", coins);
+        localStorage.setItem(inboxKey, 0);
+        showModal(`📥 Получено ${inboxCoins} монет от других пользователей`);
+      }
+      document.getElementById("coinDisplay").textContent = coins;
+    }
+
+    function claimCoins() {
       const now = Date.now();
-      if (now - lastClaim >= 2 * 60 * 60 * 1000) {
+      const twoHours = 2 * 60 * 60 * 1000;
+      if (now - lastClaim >= twoHours) {
         coins += 200;
         lastClaim = now;
         localStorage.setItem("bankix_coins", coins);
         localStorage.setItem("bankix_last_claim", lastClaim);
-        updateCoinDisplay();
-        showDialog("Вы получили 200 монет!");
+        updateDisplay();
+        showModal("✅ Получено 200 монет!");
       } else {
-        showDialog("Попробуйте позже (раз в 2 часа)");
+        const remaining = Math.ceil((twoHours - (now - lastClaim)) / 60000);
+        showModal("⏳ Попробуй через " + remaining + " мин.");
       }
     }
 
@@ -157,56 +194,50 @@
       const target = document.getElementById("targetId").value.trim();
       const amount = parseInt(document.getElementById("amount").value);
       if (!target || isNaN(amount) || amount <= 0) {
-        showDialog("Некорректные данные");
+        showModal("❌ Введи корректные данные");
         return;
       }
-      if (coins >= amount) {
-        coins -= amount;
-        localStorage.setItem("bankix_coins", coins);
-        updateCoinDisplay();
-        showDialog("Монеты отправлены!");
-      } else {
-        showDialog("Недостаточно монет");
+      if (amount > coins) {
+        showModal("❌ Недостаточно монет");
+        return;
       }
+
+      coins -= amount;
+      localStorage.setItem("bankix_coins", coins);
+
+      const inboxKey = "bankix_inbox_" + target;
+      let targetCoins = parseInt(localStorage.getItem(inboxKey)) || 0;
+      targetCoins += amount;
+      localStorage.setItem(inboxKey, targetCoins);
+
+      updateDisplay();
+      showModal(`✅ Отправлено ${amount} монет пользователю ${target}`);
     }
 
-    function switchTab(tab) {
-      document.getElementById("earn").classList.add("hidden");
-      document.getElementById("send").classList.add("hidden");
-      document.getElementById("menu").classList.add("hidden");
-      document.getElementById(tab).classList.remove("hidden");
+    function showTab(id) {
+      document.querySelectorAll(".section").forEach(el => el.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+    }
 
-      const titles = {
-        earn: "Заработать",
-        send: "Отправить",
-        menu: "Меню",
-      };
-      document.getElementById("screen-title").innerText = titles[tab];
+    // Тема по умолчанию — тёмная
+    function applyDefaultTheme() {
+      document.body.style.backgroundColor = "#111";
+      document.body.style.color = "#fff";
     }
 
     function toggleTheme() {
-      document.body.classList.toggle("light-theme");
-      const isLight = document.body.classList.contains("light-theme");
-      localStorage.setItem("bankix_theme", isLight ? "light" : "dark");
-    }
-
-    function applySettings() {
-      document.getElementById("userIdDisplay").innerText = userId;
-      updateCoinDisplay();
-
-      const savedTheme = localStorage.getItem("bankix_theme");
-      if (savedTheme === "light") {
-        document.body.classList.add("light-theme");
+      const body = document.body;
+      if (body.style.backgroundColor === "white") {
+        body.style.backgroundColor = "#111";
+        body.style.color = "#fff";
       } else {
-        document.body.classList.remove("light-theme");
+        body.style.backgroundColor = "white";
+        body.style.color = "#000";
       }
     }
 
-    function updateCoinDisplay() {
-      document.getElementById("coinsDisplay").innerText = coins;
-    }
-
-    applySettings();
+    applyDefaultTheme();
+    updateDisplay();
   </script>
 </body>
-</html>
+        </html>
