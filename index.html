@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BankiX</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      background-color: #121212;
+      color: #eee;
+      transition: background 0.3s, color 0.3s;
+      height: 100%;
+    }
+
+    .light-theme {
+      background-color: #fdfdfd;
+      color: #222;
+    }
+
+    .container {
+      padding: 20px;
+      margin-bottom: 80px;
+    }
+
+    .bottom-menu {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-top: 2px solid #444;
+      gap: 20px;
+    }
+
+    .light-theme .bottom-menu {
+      background: #ccc;
+      border-color: #aaa;
+    }
+
+    .button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 10px;
+      background: #6c63ff;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .button:hover {
+      background: #574fcf;
+    }
+
+    input {
+      padding: 10px;
+      width: 100%;
+      margin: 5px 0;
+      border-radius: 8px;
+      border: 1px solid #999;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .dialog {
+      position: fixed;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -30%);
+      background: #222;
+      color: #fff;
+      border: 2px solid #aaa;
+      border-radius: 12px;
+      padding: 20px;
+      z-index: 1000;
+      max-width: 90%;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+
+    .light-theme .dialog {
+      background: #fff;
+      color: #000;
+      border-color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="main">
+    <h2 id="screen-title">Заработать</h2>
+    <div id="earn">
+      <button class="button" onclick="earnCoins()">Получить 200 монет</button>
+    </div>
+    <div id="send" class="hidden">
+      <input type="text" id="targetId" placeholder="ID получателя" />
+      <input type="number" id="amount" placeholder="Сколько монет" />
+      <button class="button" onclick="sendCoins()">Отправить</button>
+    </div>
+    <div id="menu" class="hidden">
+      <p><b>ID:</b> <span id="userIdDisplay"></span></p>
+      <p><b>Монеты:</b> <span id="coinsDisplay">0</span></p>
+      <button class="button" onclick="toggleTheme()">Сменить тему</button>
+    </div>
+  </div>
+
+  <div class="bottom-menu">
+    <button onclick="switchTab('earn')" class="button">💰</button>
+    <button onclick="switchTab('send')" class="button">📤</button>
+    <button onclick="switchTab('menu')" class="button">⚙️</button>
+  </div>
+
+  <div id="dialog" class="dialog hidden"></div>
+
+  <script>
+    const dialog = document.getElementById("dialog");
+    const userId = localStorage.getItem("bankix_user_id") || generateId();
+    let coins = parseInt(localStorage.getItem("bankix_coins") || "0");
+    let lastClaim = parseInt(localStorage.getItem("bankix_last_claim") || "0");
+
+    function generateId() {
+      const id = "ID" + Math.floor(Math.random() * 1000000);
+      localStorage.setItem("bankix_user_id", id);
+      return id;
+    }
+
+    function showDialog(msg) {
+      dialog.innerText = msg;
+      dialog.classList.remove("hidden");
+      setTimeout(() => {
+        dialog.classList.add("hidden");
+      }, 3000);
+    }
+
+    function earnCoins() {
+      const now = Date.now();
+      if (now - lastClaim >= 2 * 60 * 60 * 1000) {
+        coins += 200;
+        lastClaim = now;
+        localStorage.setItem("bankix_coins", coins);
+        localStorage.setItem("bankix_last_claim", lastClaim);
+        updateCoinDisplay();
+        showDialog("Вы получили 200 монет!");
+      } else {
+        showDialog("Попробуйте позже (раз в 2 часа)");
+      }
+    }
+
+    function sendCoins() {
+      const target = document.getElementById("targetId").value.trim();
+      const amount = parseInt(document.getElementById("amount").value);
+      if (!target || isNaN(amount) || amount <= 0) {
+        showDialog("Некорректные данные");
+        return;
+      }
+      if (coins >= amount) {
+        coins -= amount;
+        localStorage.setItem("bankix_coins", coins);
+        updateCoinDisplay();
+        showDialog("Монеты отправлены!");
+      } else {
+        showDialog("Недостаточно монет");
+      }
+    }
+
+    function switchTab(tab) {
+      document.getElementById("earn").classList.add("hidden");
+      document.getElementById("send").classList.add("hidden");
+      document.getElementById("menu").classList.add("hidden");
+      document.getElementById(tab).classList.remove("hidden");
+
+      const titles = {
+        earn: "Заработать",
+        send: "Отправить",
+        menu: "Меню",
+      };
+      document.getElementById("screen-title").innerText = titles[tab];
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle("light-theme");
+      const isLight = document.body.classList.contains("light-theme");
+      localStorage.setItem("bankix_theme", isLight ? "light" : "dark");
+    }
+
+    function applySettings() {
+      document.getElementById("userIdDisplay").innerText = userId;
+      updateCoinDisplay();
+
+      const savedTheme = localStorage.getItem("bankix_theme");
+      if (savedTheme === "light") {
+        document.body.classList.add("light-theme");
+      } else {
+        document.body.classList.remove("light-theme");
+      }
+    }
+
+    function updateCoinDisplay() {
+      document.getElementById("coinsDisplay").innerText = coins;
+    }
+
+    applySettings();
+  </script>
+</body>
+</html>
